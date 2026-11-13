@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado SAEP - Desenvolvimento de Sistemas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- html2pdf.js para Geração do PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        /* Scrollbar customizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-none">
+
+    <!-- Notificação Toast para Bloqueio de Cópia/Inspeção -->
+    <div id="toast" class="fixed top-20 right-5 bg-red-600 text-white px-5 py-3 rounded-lg shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-3 border border-red-400">
+        <i class="fa-solid font-bold fa-triangle-exclamation text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Ação bloqueada neste ambiente de teste.</span>
+    </div>
+
+    <!-- Barra de Navegação / Header -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-bold tracking-tight text-white">SAEP 2026 <span class="text-blue-400 font-normal text-sm md:text-base">| Dev. Sistemas</span></h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Simulado de Avaliação de Desempenho</p>
+                </div>
+            </div>
+
+            <!-- Cronômetro Regressivo -->
+            <div id="timer-container" class="hidden flex items-center bg-slate-800/80 border border-slate-700 px-4 py-1.5 rounded-xl space-x-3">
+                <i class="fa-regular fa-clock text-amber-400 text-lg animate-pulse"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Tempo Restante</div>
+                    <div id="timer-display" class="font-mono text-lg font-bold text-amber-400">02:00:00</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 my-2">
+
+        <!-- TELA 1: Boas-vindas / Nome do Aluno -->
+        <section id="welcome-screen" class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="text-center mb-6">
+                <span class="bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20">Simulado Preparatório</span>
+                <h2 class="text-3xl font-extrabold text-white mt-3">Simulado SAEP - Banco de Questões</h2>
+                <p class="text-slate-400 mt-2 text-sm md:text-base">Responda às questões da avaliação oficial de Desenvolvimento de Sistemas.</p>
+            </div>
+
+            <!-- Campo obrigatório para o Nome do Aluno -->
+            <div class="bg-slate-800/70 border border-blue-500/30 rounded-xl p-5 mb-6 shadow-inner">
+                <label for="student-name-input" class="block text-sm font-semibold text-slate-200 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-user-graduate text-blue-400"></i> Nome Completo do Aluno <span class="text-red-400">*</span>
+                </label>
+                <input type="text" id="student-name-input" placeholder="Digite seu nome completo aqui..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium transition" required>
+                <p id="name-error-msg" class="text-xs text-red-400 mt-1.5 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Por favor, informe seu nome para iniciar o simulado.</p>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="flex items-start space-x-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <div class="text-blue-400 mt-1"><i class="fa-solid fa-list-check text-xl"></i></div>
+                    <div>
+                        <h4 class="font-semibold text-white text-sm">Questões de Múltipla Escolha</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">Leia atentamente cada enunciado e escolha a opção correta.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <div class="text-amber-400 mt-1"><i class="fa-regular fa-clock text-xl"></i></div>
+                    <div>
+                        <h4 class="font-semibold text-white text-sm">Tempo Limite de 2 Horas</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">O tempo iniciará assim que você clicar em começar. Ao esgotar, a prova será entregue automaticamente.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <div class="text-emerald-400 mt-1"><i class="fa-solid fa-file-pdf text-xl"></i></div>
+                    <div>
+                        <h4 class="font-semibold text-white text-sm">Relatório em PDF para Envio</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">Ao concluir, o sistema gerará um arquivo PDF com sua nota e gabarito comentado para você baixar e enviar ao professor.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center pt-2">
+                <button id="start-btn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 px-10 rounded-xl shadow-lg shadow-blue-600/30 transition-all transform active:scale-95 text-base">
+                    <i class="fa-solid fa-play mr-2"></i> Iniciar Simulado Agora
+                </button>
+            </div>
+        </section>
+
+
+        <!-- TELA 2: Aplicação do Simulado -->
+        <section id="quiz-screen" class="hidden grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Painel Esquerdo: Questão Atual -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[500px]">
+                    <div>
+                        <!-- Header da Questão -->
+                        <div class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4 mb-5 gap-2">
+                            <span id="question-badge" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold px-3 py-1 rounded-md">
+                                Questão 1
+                            </span>
+                            <span class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-md border border-slate-700 font-semibold">
+                                <i class="fa-solid fa-user text-blue-400 mr-1"></i> Aluno: <span id="student-name-header">--</span>
+                            </span>
+                        </div>
+
+                        <!-- Enunciado -->
+                        <div id="question-text" class="text-slate-100 text-sm md:text-base leading-relaxed font-medium mb-6"></div>
+
+                        <!-- Alternativas -->
+                        <div id="options-container" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Botões de Navegação -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-5 mt-6">
+                        <button id="prev-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed font-semibold px-5 py-2.5 rounded-xl border border-slate-700 text-sm flex items-center gap-2 transition">
+                            <i class="fa-solid fa-arrow-left"></i> Anterior
+                        </button>
+
+                        <div class="flex items-center gap-3">
+                            <button id="next-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+                                Próxima <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                            <button id="finish-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 text-sm flex items-center gap-2 transition">
+                                <i class="fa-solid fa-check-double"></i> Finalizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel Direito: Grid de Navegação -->
+            <div class="lg:col-span-1">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl sticky top-24">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center justify-between">
+                        <span>Navegação</span>
+                        <span id="answered-count-badge" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md font-normal">0 respondidas</span>
+                    </h3>
+
+                    <!-- Grid Dinâmico -->
+                    <div id="questions-grid" class="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto p-1"></div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded bg-blue-600 inline-block border border-blue-400"></span>
+                            <span>Atual</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded bg-emerald-600/40 border border-emerald-500 inline-block"></span>
+                            <span>Respondida</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded bg-slate-800 border border-slate-700 inline-block"></span>
+                            <span>Pendente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- TELA 3: Resultado & Download do PDF para Envio Manual -->
+        <section id="result-screen" class="hidden space-y-8 max-w-5xl mx-auto">
+            
+            <!-- Dashboard de Resultados -->
+            <div id="report-printable-area" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                <div class="text-center mb-6">
+                    <span class="bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-500/20">Simulado Concluído</span>
+                    <h2 class="text-3xl font-extrabold text-white mt-2">Relatório de Desempenho</h2>
+                    <p class="text-slate-400 text-sm mt-1">Aluno(a): <strong id="pdf-student-name" class="text-blue-400 font-bold">--</strong> | Data: <span id="pdf-completion-date" class="text-slate-300">--</span></p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <!-- Porcentagem -->
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-6 rounded-2xl flex flex-col justify-center items-center">
+                        <div id="score-percentage" class="text-5xl font-black text-blue-400 font-mono">0%</div>
+                        <span class="text-xs uppercase text-slate-400 font-bold tracking-wider mt-2">Aproveitamento Total</span>
+                    </div>
+
+                    <!-- Acertos -->
+                    <div class="bg-emerald-950/30 border border-emerald-800/40 p-6 rounded-2xl flex flex-col justify-center items-center">
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <i class="fa-solid fa-circle-check text-2xl"></i>
+                            <span id="score-correct" class="text-4xl font-extrabold font-mono">0</span>
+                        </div>
+                        <span class="text-xs uppercase text-emerald-400/80 font-bold tracking-wider mt-2">Acertos</span>
+                    </div>
+
+                    <!-- Erros -->
+                    <div class="bg-red-950/30 border border-red-800/40 p-6 rounded-2xl flex flex-col justify-center items-center">
+                        <div class="flex items-center gap-2 text-red-400">
+                            <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                            <span id="score-incorrect" class="text-4xl font-extrabold font-mono">0</span>
+                        </div>
+                        <span class="text-xs uppercase text-red-400/80 font-bold tracking-wider mt-2">Erros / Não Respondidas</span>
+                    </div>
+                </div>
+
+                <!-- Quadro de Instrução para Envio Manual ao Professor -->
+                <div class="mt-8 p-4 bg-blue-950/40 border border-blue-800/50 rounded-xl text-center space-y-2">
+                    <p class="text-sm text-blue-300 font-semibold">
+                        <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i> Instrução para entrega:
+                    </p>
+                    <p class="text-xs text-slate-300">
+                        Clique no botão abaixo para baixar o seu comprovante em PDF. Em seguida, envie o arquivo baixado manualmente para o seu professor (via e-mail, WhatsApp ou ambiente virtual).
+                    </p>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="mt-6 pt-6 border-t border-slate-800 flex flex-wrap items-center justify-center gap-4">
+                    <button id="download-pdf-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-emerald-600/20 transition text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-lg"></i> Baixar Comprovante em PDF
+                    </button>
+
+                    <button id="restart-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700 transition text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Refazer Simulado
+                    </button>
+                </div>
+            </div>
+
+            <!-- Revisão Questão a Questão -->
+            <div id="review-printable-section" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-blue-400"></i>
+                    Revisão e Gabarito Comentado
+                </h3>
+
+                <div id="review-container" class="space-y-6"></div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        <p>© 2026 - Desenvolvido por <strong>Instrutor Jonathan Mattos</strong>. Este é um projeto educacional e não possui qualquer filiação, endosso ou vínculo oficial com o SAEP ou órgãos governamentais/educacionais.</p>
+    </footer>
+
+    <!-- Lógica JavaScript com Dados do Arquivo Anexo -->
+    <script>
+        // --- 1. BANCO DE DADOS EXTRAÍDO DO ARQUIVO ANEXO ---
+        const questionsData = [
+            {
+                id: 1,
+                title: "QUESTÃO 01",
+                question: "Uma equipe de desenvolvimento está implementando um sistema de gestão escolar orientado a objetos[cite: 5]. Durante a modelagem da classe Aluno, os desenvolvedores identificaram que informações como matrícula e notas precisam ser protegidas para evitar alterações diretas por outras partes do sistema[cite: 5]. Para garantir integridade dos dados e controle das regras de negócio, a equipe decidiu que esses atributos devem ser manipulados por meio de métodos definidos dentro da própria classe, permitindo que operações como atualização de notas e consulta das informações do aluno ocorram de forma controlada[cite: 5].<br><br>Selecione a prática a ser realizada:[cite: 5]",
+                options: [
+                    "Declarar todos os atributos da classe como públicos para facilitar o acesso.[cite: 5]",
+                    "Utilizar variáveis globais para armazenar os dados dos alunos.[cite: 5]",
+                    "Declarar os atributos como privados e disponibilizar métodos de acesso controlado.[cite: 5]",
+                    "Criar métodos estáticos para acessar diretamente os atributos.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O aluno acertou porque aplicou corretamente o encapsulamento ao proteger os atributos e controlar o acesso por métodos[cite: 5]. Atributos públicos violam o encapsulamento e variáveis globais aumentam o acoplamento[cite: 5]."
+            },
+            {
+                id: 2,
+                title: "QUESTÃO 02",
+                question: "Uma equipe de desenvolvimento está projetando o módulo financeiro principal de uma fintech[cite: 5]. Durante a estruturação da entidade que gerenciará as finanças dos clientes, a equipe elaborou um esboço em UML no qual o atributo <b>saldo</b> exige restrição estrita de acesso[cite: 5]. Qualquer alteração no montante deve ocorrer obrigatoriamente pela invocação dos métodos de negócio <i>depositar</i> ou <i>sacar</i>[cite: 5].<br><br>Para que o modelo de classes cumpra a restrição arquitetural de integridade estabelecida, a lacuna [Visibilidade] deve ser substituída pelo modificador:[cite: 5]",
+                options: [
+                    "de escopo público, representado graficamente pelo sinal de mais (+).[cite: 5]",
+                    "restrito de pacote, representado graficamente pelo símbolo de til (~).[cite: 5]",
+                    "de proteção de herança, representado graficamente pela cerquilha (#).[cite: 5]",
+                    "de acesso privado, representado graficamente pelo sinal de menos (-).[cite: 5]"
+                ],
+                correct: 3,
+                explanation: "A utilização do modificador de acesso privado (representado pelo sinal - na notação UML) é o recurso fundamental de encapsulamento na POO para blindar atributos críticos contra acessos externos não autorizados[cite: 5]."
+            },
+            {
+                id: 3,
+                title: "QUESTÃO 03",
+                question: "Em uma fábrica de software, um técnico está realizando a manutenção em um módulo legado de controle de estoque[cite: 5]. Durante a varredura, observa que os atributos <i>precoCusto</i> e <i>quantidadeEstoque</i> da classe <i>Produto</i> são públicos e manipulados livremente pela classe <i>Venda</i> sem validação prévia[cite: 5].<br><br>Considerando a análise desse trecho de código, o impacto técnico direto dessa implementação na arquitetura do sistema é a:[cite: 5]",
+                options: [
+                    "ampliação da flexibilidade para a reutilização de componentes em diferentes módulos.[cite: 5]",
+                    "fragilização do encapsulamento, gerando alto acoplamento e dificuldade de evolução.[cite: 5]",
+                    "otimização do tempo de execução por evitar a chamada de métodos acessores.[cite: 5]",
+                    "simplificação da lógica de negócio ao centralizar as regras fora das classes de dados.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O encapsulamento visa ocultar e proteger o estado interno de um objeto[cite: 5]. Quando atributos são definidos como públicos e modificados diretamente por outras classes, o sistema sofre de alto acoplamento estrutural, tornando-se suscetível a falhas e dificultando manutenções[cite: 5]."
+            },
+            {
+                id: 4,
+                title: "QUESTÃO 04",
+                question: "Uma equipe de qualidade está organizando os testes de um sistema de gestão comercial que será implantado em uma empresa[cite: 5]. Para orientar a execução dos testes, a equipe precisa definir objetivos, escopo, recursos envolvidos e critérios que indiquem quando os testes podem ser iniciados e finalizados[cite: 5].<br><br>O documento que é adequado para consolidar essas informações é:[cite: 5]",
+                options: [
+                    "documento de requisitos do sistema.[cite: 5]",
+                    "plano de testes do projeto.[cite: 5]",
+                    "manual do usuário final.[cite: 5]",
+                    "código-fonte da aplicação.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O plano de testes é o documento responsável por organizar objetivos, escopo, recursos e critérios de execução dos testes de software[cite: 5]."
+            },
+            {
+                id: 5,
+                title: "QUESTÃO 05",
+                question: "Uma equipe de desenvolvimento está elaborando o planejamento de testes de um sistema web de gestão hospitalar[cite: 5]. Para evitar gargalos operacionais e falhas de segurança, o técnico responsável precisa padronizar formalmente as condições prévias que autorizam o início das validações e as exigências mínimas de estabilidade para aprovar a entrega final[cite: 5].<br><br>Para formalizar as condições de bloqueio e liberação descritas no cenário dentro do documento do Plano de Testes, o técnico deve:[cite: 5]",
+                options: [
+                    "especificar a conclusão das funcionalidades na seção de Escopo de Testes e a ausência de falhas no Cronograma geral.[cite: 5]",
+                    "registrar a conclusão das rotinas básicas como Critério de Entrada e a resolução de falhas de segurança como Critério de Saída.[cite: 5]",
+                    "estabelecer as funcionalidades prontas dentro da listagem de Casos de Teste e a validação de segurança na Massa de Dados.[cite: 5]",
+                    "definir as entregas prévias dos desenvolvedores no Ambiente de Testes e a liberação da versão no Plano de Contingência.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "Critérios de Entrada definem os pré-requisitos obrigatórios para iniciar a fase de testes (ex: rotinas básicas codificadas), enquanto os Critérios de Saída determinam as metas necessárias para encerrar os testes com segurança[cite: 5]."
+            },
+            {
+                id: 6,
+                title: "QUESTÃO 06",
+                question: "Uma fábrica de software foi contratada para desenvolver um sistema de controle financeiro de alta complexidade[cite: 5]. Antes de iniciar a codificação dos testes, o líder de QA realiza uma análise documental dos requisitos para estabelecer uma visão macro que defina escopo, critérios de aceitação, ferramentas, cronograma e responsáveis[cite: 5].<br><br>Selecione o documento técnico que deve ser elaborado nessa fase inicial:[cite: 5]",
+                options: [
+                    "Registro de evidências fotográficas das falhas de interface encontradas.[cite: 5]",
+                    "Plano de teste contendo a estratégia e o escopo da validação.[cite: 5]",
+                    "Script de automação codificado para os testes de unidade.[cite: 5]",
+                    "Manual de usuário com as instruções de instalação do sistema.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O Plano de Teste é o documento que descreve o escopo, a abordagem, os recursos e o cronograma das atividades de teste pretendidas[cite: 5]."
+            },
+            {
+                id: 7,
+                title: "QUESTÃO 07",
+                question: "Durante a manutenção preventiva em um painel de controle industrial, um técnico observa que, devido a uma diferença de potencial aplicada pelas fontes de alimentação, ocorre um movimento ordenado de cargas elétricas ao longo da extensão do cabo condutor de cobre[cite: 5].<br><br>Identifique o fenômeno físico observado pelo técnico no interior do condutor:[cite: 5]",
+                options: [
+                    "Tensão elétrica.[cite: 5]",
+                    "Corrente elétrica.[cite: 5]",
+                    "Resistência elétrica.[cite: 5]",
+                    "Potência elétrica.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O fluxo ordenado de elétrons/cargas elétricas em um meio condutor impulsionado por uma diferença de potencial caracteriza a Corrente Elétrica[cite: 5]."
+            },
+            {
+                id: 8,
+                title: "QUESTÃO 08",
+                question: "Durante a instalação de um novo servidor de banco de dados, o manual alerta que é necessária uma diferença de potencial estável entre os terminais de alimentação[cite: 5]. Essa grandeza física funciona como uma 'força de impulsão' ou pressão, responsável por fornecer energia para o movimento das cargas[cite: 5].<br><br>Essa pressão ou diferença de potencial é tecnicamente denominada:[cite: 5]",
+                options: [
+                    "corrente elétrica.[cite: 5]",
+                    "resistência elétrica.[cite: 5]",
+                    "tensão elétrica.[cite: 5]",
+                    "potência elétrica.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A tensão elétrica (medida em Volts) é a diferença de potencial (ddp) responsável por 'empurrar' os elétrons, gerando a corrente elétrica no circuito[cite: 5]."
+            },
+            {
+                id: 9,
+                title: "QUESTÃO 09",
+                question: "Um técnico em desenvolvimento de sistemas projeta um circuito IoT[cite: 5]. Um resistor de precisão de 10 Ω encontra-se submetido a uma diferença de potencial constante de 20 V[cite: 5].<br><br>Aplicando a Lei de Ohm, o valor da corrente elétrica que circula por esse resistor é de:[cite: 5]",
+                options: [
+                    "0,5 A.[cite: 5]",
+                    "2,0 A.[cite: 5]",
+                    "10,0 A.[cite: 5]",
+                    "200,0 A.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "Pela Primeira Lei de Ohm (I = V / R), dividindo a tensão de 20 V pela resistência de 10 Ω obtemos a corrente de 2,0 A[cite: 5]."
+            },
+            {
+                id: 10,
+                title: "QUESTÃO 10",
+                question: "Um técnico de suporte de TI está dimensionando a capacidade de um no-break para um ativo de rede que opera com tensão nominal de 110 V e exige corrente de 5 A[cite: 5].<br><br>Para o correto dimensionamento, a potência elétrica consumida por esse equipamento é de:[cite: 5]",
+                options: [
+                    "22 W.[cite: 5]",
+                    "115 W.[cite: 5]",
+                    "550 W.[cite: 5]",
+                    "5.500 W.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A potência elétrica é calculada pelo produto da tensão pela corrente (P = V * I). Multiplicando 110 V por 5 A, tem-se 550 W[cite: 5]."
+            },
+            {
+                id: 11,
+                title: "QUESTÃO 11",
+                question: "Durante a montagem de um protótipo IoT, o técnico precisa garantir que a energia de uma bateria não danifique o circuito em caso de inversão de polaridade, utilizando um semicondutor que conduz a corrente em apenas um sentido e bloqueia no sentido oposto[cite: 5].<br><br>O componente a ser selecionado é o:[cite: 5]",
+                options: [
+                    "Resistor.[cite: 5]",
+                    "Capacitor.[cite: 5]",
+                    "Diodo.[cite: 5]",
+                    "Transistor.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O diodo é um componente semicondutor que conduz corrente elétrica apenas quando polarizado diretamente, agindo como uma chave unidirecional[cite: 5]."
+            },
+            {
+                id: 12,
+                title: "QUESTÃO 12",
+                question: "Em um projeto de automação industrial, a porta de saída de um microcontrolador não fornece corrente suficiente para acionar um motor de corrente contínua diretamente[cite: 5]. O técnico utiliza um semicondutor para atuar como chave eletrônica de potência a partir do sinal lógico do circuito[cite: 5].<br><br>Qual componente realiza essa função?[cite: 5]",
+                options: [
+                    "Diodo.[cite: 5]",
+                    "Transistor.[cite: 5]",
+                    "Capacitor.[cite: 5]",
+                    "Resistor.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O transistor, ao operar nas regiões de corte e saturação, atua como chave eletrônica, permitindo que sinais de baixa corrente controlem cargas de maior potência[cite: 5]."
+            },
+            {
+                id: 13,
+                title: "QUESTÃO 13",
+                question: "Um módulo de segurança de prensa hidráulica exige que a máquina só seja acionada se dois sensores independentes (A e B) detectarem a presença das mãos do operador simultaneamente[cite: 5]. Se qualquer sensor estiver em nível baixo (0), a saída deve ser mantida em 0[cite: 5].<br><br>Para implementar essa lógica, deve-se utilizar a porta lógica:[cite: 5]",
+                options: [
+                    "OR (OU).[cite: 5]",
+                    "XOR (OU Exclusivo).[cite: 5]",
+                    "NOT (NÃO).[cite: 5]",
+                    "AND (E).[cite: 5]"
+                ],
+                correct: 3,
+                explanation: "A porta lógica AND (E) exige que todas as suas entradas sejam simultaneamente verdadeiras (1) para que a saída seja 1[cite: 5]."
+            },
+            {
+                id: 14,
+                title: "QUESTÃO 14",
+                question: "Um sensor de temperatura analógico gera um sinal de tensão contínuo e proporcional à temperatura[cite: 5]. Porém, o microcontrolador é um sistema digital binário (0 e 1)[cite: 5].<br><br>Para permitir a leitura desse sensor pelo microcontrolador, a interface de hardware deve utilizar um:[cite: 5]",
+                options: [
+                    "amplificador operacional.[cite: 5]",
+                    "conversor analógico-digital (A/D).[cite: 5]",
+                    "transistor bipolar de junção.[cite: 5]",
+                    "oscilador eletrônico de clock.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "O conversor Analógico-Digital (ADC) converte variações contínuas de tensão em valores digitais discretos (bits) interpretáveis pelo processador[cite: 5]."
+            },
+            {
+                id: 15,
+                title: "QUESTÃO 15",
+                question: "Um componente emite um sinal elétrico de tensão contínua que varia proporcionalmente à temperatura ambiente sem apresentar saltos abruptos[cite: 5].<br><br>Com base nessa característica contínua, esse componente é classificado como um sensor:[cite: 5]",
+                options: [
+                    "digital.[cite: 5]",
+                    "binário.[cite: 5]",
+                    "analógico.[cite: 5]",
+                    "lógico.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "Sensores analógicos convertem grandezas físicas reais em sinais elétricos contínuos que assumem infinitos valores dentro de sua faixa de medição[cite: 5]."
+            },
+            {
+                id: 16,
+                title: "QUESTÃO 16",
+                question: "Em uma linha de montagem, um braço robótico deve ser acionado através de decisões lógicas discretas em um circuito de eletrônica digital[cite: 5].<br><br>A característica da eletrônica digital que permite a implementação dessa lógica é a:[cite: 5]",
+                options: [
+                    "amostragem de sinais em espectro contínuo de tensão.[cite: 5]",
+                    "representação da informação por meio de estados binários.[cite: 5]",
+                    "amplificação linear de correntes elétricas variáveis.[cite: 5]",
+                    "modulação de frequência para sinais eletromagnéticos.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "A eletrônica digital opera com níveis lógicos discretos (0 e 1), viabilizando o uso de portas lógicas para decisões precisas[cite: 5]."
+            },
+            {
+                id: 17,
+                title: "QUESTÃO 17",
+                question: "Durante a implantação de um sistema escolar, o desenvolvedor precisa registrar um novo curso na tabela <i>Cursos</i> com as informações: 'Java' para a coluna <i>nome_curso</i> e '40' para a coluna <i>carga_horaria</i>[cite: 5].<br><br>A instrução SQL correta a ser executada é:[cite: 5]",
+                options: [
+                    "UPDATE Cursos SET nome_curso = 'Java', carga_horaria = 40;[cite: 5]",
+                    "CREATE INTO Cursos (nome_curso, carga_horaria) VALUES ('Java', 40);[cite: 5]",
+                    "INSERT INTO Cursos (nome_curso, carga_horaria) VALUES ('Java', 40);[cite: 5]",
+                    "SELECT INTO Cursos (nome_curso, carga_horaria) VALUES ('Java', 40);[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O comando INSERT INTO é a instrução DML padrão para inserir novos registros em tabelas relacionais[cite: 5]."
+            },
+            {
+                id: 18,
+                title: "QUESTÃO 18",
+                question: "O desenvolvedor de banco de dados precisa realizar uma limpeza eliminando de forma permanente a estrutura física e todos os metadados da tabela <i>Teste_Conexao</i>[cite: 5].<br><br>Identifique a instrução SQL adequada:[cite: 5]",
+                options: [
+                    "DROP TABLE Teste_Conexao;[cite: 5]",
+                    "DELETE TABLE Teste_Conexao;[cite: 5]",
+                    "REMOVE TABLE Teste_Conexao;[cite: 5]",
+                    "TRUNCATE TABLE Teste_Conexao;[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "DROP TABLE é o comando DDL utilizado para apagar permanentemente da base de dados a estrutura da tabela e seus registros[cite: 5]."
+            },
+            {
+                id: 19,
+                title: "QUESTÃO 19",
+                question: "Um DBA precisa excluir a tabela <i>Produtos</i>. Contudo, a tabela <i>Itens_Pedido</i> possui uma chave estrangeira que referencia a tabela <i>Produtos</i>[cite: 5].<br><br>A instrução SQL que permite excluir a tabela e eliminar automaticamente suas restrições de integridade referencial é:[cite: 5]",
+                options: [
+                    "DELETE TABLE Produtos INCLUDING CONSTRAINTS;[cite: 5]",
+                    "DROP TABLE Produtos CASCADE CONSTRAINTS;[cite: 5]",
+                    "TRUNCATE TABLE Produtos WITH REFERENCES;[cite: 5]",
+                    "REMOVE TABLE Produtos FORCE;[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "A cláusula CASCADE CONSTRAINTS no comando DROP TABLE remove a tabela e desfaz automaticamente as restrições de chave estrangeira dependentes[cite: 5]."
+            },
+            {
+                id: 20,
+                title: "QUESTÃO 20",
+                question: "Um DBA precisa conceder permissão de leitura na tabela <i>Transacoes_Financeiras</i> para o usuário <i>auditor_externo</i>, permitindo que ele também repasse essa permissão a outros usuários[cite: 5].<br><br>A instrução SQL adequada é:[cite: 5]",
+                options: [
+                    "GRANT SELECT ON Transacoes_Financeiras TO auditor_externo WITH ADMIN OPTION;[cite: 5]",
+                    "GRANT SELECT ON Transacoes_Financeiras TO auditor_externo WITH GRANT OPTION;[cite: 5]",
+                    "PERMIT SELECT ON Transacoes_Financeiras TO auditor_externo EXTENDED;[cite: 5]",
+                    "ALLOW SELECT ON Transacoes_Financeiras TO auditor_externo WITH DELEGATE;[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "A cláusula WITH GRANT OPTION permite que o usuário que recebeu a permissão em um objeto possa concedê-la a terceiros[cite: 5]."
+            },
+            {
+                id: 21,
+                title: "QUESTÃO 21",
+                question: "É necessário atualizar o status dos registros na tabela <i>Chamados</i> para 'Arquivado', atingindo apenas registros cuja <i>data_att</i> seja anterior ao ano de 2023[cite: 5].<br><br>Qual instrução SQL realiza essa alteração?[cite: 5]",
+                options: [
+                    "UPDATE Chamados SET status = 'Arquivado' WHERE YEAR(data_att) < 2023;[cite: 5]",
+                    "ALTER Chamados CHANGE status TO 'Arquivado' WHERE data_att < '2023-01-01';[cite: 5]",
+                    "UPDATE Chamados REPLACE status = 'Arquivado' WHERE data_att < 2023;[cite: 5]",
+                    "MODIFY Chamados SET status = 'Arquivado' HAVING data_att < 2023;[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "O comando UPDATE com a cláusula SET e a função temporal YEAR() realiza a alteração condicional dos registros desejados[cite: 5]."
+            },
+            {
+                id: 22,
+                title: "QUESTÃO 25",
+                question: "Um analista precisa remover permanentemente todos os registros de uma tabela chamada <i>Historico_Acessos</i> para liberar espaço de forma rápida, sem deletar a estrutura da tabela em si[cite: 5].<br><br>Qual comando SQL deve ser utilizado?[cite: 5]",
+                options: [
+                    "DROP TABLE Historico_Acessos;[cite: 5]",
+                    "DELETE FROM Historico_Acessos;[cite: 5]",
+                    "TRUNCATE TABLE Historico_Acessos;[cite: 5]",
+                    "REMOVE ALL FROM Historico_Acessos;[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O comando TRUNCATE TABLE realiza o esvaziamento total e de alta performance dos dados mantendo a estrutura da tabela intacta[cite: 5]."
+            },
+            {
+                id: 23,
+                title: "QUESTÃO 26",
+                question: "Para garantir a segurança dos dados, o administrador precisa conceder ao usuário 'estagiario_ti' apenas o direito de consultar a tabela <i>Relatorios</i>[cite: 5].<br><br>Qual comando DCL deve ser aplicado?[cite: 5]",
+                options: [
+                    "GRANT SELECT ON Relatorios TO 'estagiario_ti';[cite: 5]",
+                    "ALLOW READ ON Relatorios FOR 'estagiario_ti';[cite: 5]",
+                    "PERMIT SELECT ON Relatorios TO 'estagiario_ti';[cite: 5]",
+                    "GIVE ACCESS SELECT ON Relatorios TO 'estagiario_ti';[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "O comando GRANT SELECT ON tabela TO usuario concede a permissão de leitura sobre a entidade informada[cite: 5]."
+            },
+            {
+                id: 24,
+                title: "QUESTÃO 27",
+                question: "A tabela <i>Clientes_Inativos</i> deve ser removida completamente do banco de dados, incluindo sua estrutura física e definições[cite: 5].<br><br>Qual comando deve ser executado?[cite: 5]",
+                options: [
+                    "DELETE TABLE Clientes_Inativos;[cite: 5]",
+                    "DROP TABLE Clientes_Inativos;[cite: 5]",
+                    "ERASE TABLE Clientes_Inativos;[cite: 5]",
+                    "REMOVE TABLE Clientes_Inativos;[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "DROP TABLE é a instrução DDL apropriada para apagar uma tabela inteira e seu catálogo do banco de dados[cite: 5]."
+            },
+            {
+                id: 25,
+                title: "QUESTÃO 28",
+                question: "Para cadastrar um produto 'Teclado Gamer' (preço: 150.00, quantidade: 20) na tabela <i>Produtos</i> (colunas: nome, preco, quantidade)[cite: 5].<br><br>Qual a instrução SQL correta?[cite: 5]",
+                options: [
+                    "ADD INTO Produtos (nome, preco, quantidade) VALUES ('Teclado Gamer', 150.00, 20);[cite: 5]",
+                    "UPDATE Produtos SET nome='Teclado Gamer', preco=150.00, quantidade=20;[cite: 5]",
+                    "INSERT INTO Produtos (nome, preco, quantidade) VALUES ('Teclado Gamer', 150.00, 20);[cite: 5]",
+                    "NEW ROW Produtos VALUES ('Teclado Gamer', 150.00, 20);[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A sintaxe padrão de inclusão de novos registros DML é INSERT INTO tabela (colunas) VALUES (valores)[cite: 5]."
+            },
+            {
+                id: 26,
+                title: "QUESTÃO 29",
+                question: "O desenvolvedor deve remover imediatamente o privilégio de exclusão (DELETE) do usuário 'user_beta' na tabela <i>Vendas</i>[cite: 5].<br><br>Qual comando deve ser utilizado?[cite: 5]",
+                options: [
+                    "REVOKE DELETE ON Vendas FROM 'user_beta';[cite: 5]",
+                    "REMOVE GRANT DELETE ON Vendas TO 'user_beta';[cite: 5]",
+                    "DENY DELETE ON Vendas FOR 'user_beta';[cite: 5]",
+                    "CANCEL DELETE ON Vendas FROM 'user_beta';[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "O comando REVOKE é utilizado em DCL para revogar privilégios previamente concedidos a um usuário[cite: 5]."
+            },
+            {
+                id: 27,
+                title: "QUESTÃO 30",
+                question: "Um sistema de vendas precisa excluir da tabela <i>Pedidos</i> o registro do pedido cancelado com id_pedido = 1025[cite: 5].<br><br>Qual comando deve ser executado?[cite: 5]",
+                options: [
+                    "DROP FROM Pedidos WHERE id_pedido = 1025;[cite: 5]",
+                    "TRUNCATE Pedidos WHERE id_pedido = 1025;[cite: 5]",
+                    "DELETE FROM Pedidos WHERE id_pedido = 1025;[cite: 5]",
+                    "REMOVE FROM Pedidos WHERE id_pedido = 1025;[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O comando DELETE FROM tabela WHERE condição remove linhas específicas filtradas por parâmetros[cite: 5]."
+            },
+            {
+                id: 28,
+                title: "QUESTÃO 31",
+                question: "É necessário alterar a nomenclatura da coluna <i>nome_usuario</i> para <i>login</i> na tabela <i>Usuarios</i>, mantendo a estrutura e os dados gravados[cite: 5].<br><br>Qual instrução DDL implementa essa alteração?[cite: 5]",
+                options: [
+                    "UPDATE TABLE Usuarios RENAME COLUMN nome_usuario TO login;[cite: 5]",
+                    "ALTER TABLE Usuarios RENAME COLUMN nome_usuario TO login;[cite: 5]",
+                    "CHANGE TABLE Usuarios COLUMN nome_usuario TO login;[cite: 5]",
+                    "MODIFY TABLE Usuarios COLUMN nome_usuario AS login;[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "A instrução ALTER TABLE ... RENAME COLUMN é a sintaxe SQL padrão para renomear colunas mantendo a integridade da tabela[cite: 5]."
+            },
+            {
+                id: 29,
+                title: "QUESTÃO 32",
+                question: "Considere a matriz quadrada bidimensional:<br><code class='block bg-slate-800 text-blue-300 p-2 rounded my-2 text-xs font-mono'>matriz[0][0] = 10, matriz[0][1] = 20<br>matriz[1][0] = 30, matriz[1][1] = 50</code><br>O algoritmo realiza laços aninhados acumulando os valores onde <code class='text-emerald-400'>(l == c)</code> na variável <i>soma</i>[cite: 5].<br><br>Ao final do teste de mesa, o valor armazenado na variável soma será:[cite: 5]",
+                options: [
+                    "30.[cite: 5]",
+                    "50.[cite: 5]",
+                    "60.[cite: 5]",
+                    "110.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A condição (l == c) filtra os elementos da diagonal principal (matriz[0][0] = 10 e matriz[1][1] = 50), totalizando 60[cite: 5]."
+            },
+            {
+                id: 30,
+                title: "QUESTÃO 33",
+                question: "Analise a estrutura de repetição em pseudocódigo:<br><code class='block bg-slate-800 text-amber-300 p-2 rounded my-2 text-xs font-mono'>cont <- 1<br>total <- 0<br>enquanto (cont <= 3) faca<br>&nbsp;&nbsp;total <- total + (cont * 10)<br>&nbsp;&nbsp;cont <- cont + 1<br>fim_enquanto</code><br>Ao efetuar o teste de mesa, o valor final da variável <i>total</i> é:[cite: 5]",
+                options: [
+                    "10.[cite: 5]",
+                    "30.[cite: 5]",
+                    "60.[cite: 5]",
+                    "100.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "Ciclo 1: cont=1 -> total=10; Ciclo 2: cont=2 -> total=10+20=30; Ciclo 3: cont=3 -> total=30+30=60[cite: 5]. Quando cont=4 a repetição encerra[cite: 5]."
+            },
+            {
+                id: 31,
+                title: "QUESTÃO 34",
+                question: "Uma tabela <i>Pedidos</i> armazena redundâncias repetindo dados do cliente (Nome e Telefone) a cada compra[cite: 5].<br><br>A técnica relacional aplicada para eliminar essa duplicação decompondo os dados em entidades menores é a:[cite: 5]",
+                options: [
+                    "indexação de colunas.[cite: 5]",
+                    "normalização de dados.[cite: 5]",
+                    "particionamento de tabelas.[cite: 5]",
+                    "desnormalização estrutural.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "A normalização de dados aplica regras (Formas Normais) para organizar tabelas, reduzindo redundâncias e prevenindo anomalias[cite: 5]."
+            },
+            {
+                id: 32,
+                title: "QUESTÃO 35",
+                question: "Um estoque vertical armazena caixas empilhadas onde o operador só tem acesso e remoção à caixa posicionada no topo[cite: 5].<br><br>Para representar essa restrição lógica no software, utiliza-se a estrutura de dados do tipo:[cite: 5]",
+                options: [
+                    "fila (FIFO).[cite: 5]",
+                    "vetor (array).[cite: 5]",
+                    "pilha (LIFO).[cite: 5]",
+                    "matriz (matrix).[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A Pilha opera pelo princípio LIFO (Last In, First Out), no qual o último elemento a entrar é obrigatoriamente o primeiro a ser retirado[cite: 5]."
+            },
+            {
+                id: 33,
+                title: "QUESTÃO 36",
+                question: "Sensores IoT com baixo processamento operam em rede fabril com sinal instável[cite: 5]. O sistema exige modelo assíncrono Publish/Subscribe via Broker com baixo consumo de banda[cite: 5].<br><br>O protocolo adequado é o:[cite: 5]",
+                options: [
+                    "HTTP.[cite: 5]",
+                    "FTP.[cite: 5]",
+                    "MQTT.[cite: 5]",
+                    "SMTP.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "O MQTT (Message Queuing Telemetry Transport) é o protocolo leve de mensageria Publish/Subscribe otimizado para cenários IoT com restrição de rede[cite: 5]."
+            },
+            {
+                id: 34,
+                title: "QUESTÃO 37",
+                question: "Ao medir os terminais de uma bateria IoT com multímetro, o técnico verifica a força/diferencial de potencial que move as cargas no circuito[cite: 5].<br><br>A grandeza física aferida é a:[cite: 5]",
+                options: [
+                    "corrente elétrica.[cite: 5]",
+                    "resistência elétrica.[cite: 5]",
+                    "tensão elétrica.[cite: 5]",
+                    "frequência elétrica.[cite: 5]"
+                ],
+                correct: 2,
+                explanation: "A tensão elétrica é a grandeza que estabelece a diferença de potencial elétrico para impulsionar a corrente pelo circuito[cite: 5]."
+            },
+            {
+                id: 35,
+                title: "QUESTÃO 38",
+                question: "A modelagem da classe <i>Aluno</i> requer que seus atributos sejam protegidos contra acesso externo direto, manipulando-os apenas através de métodos da própria classe[cite: 5].<br><br>O conceito de Programação Orientada a Objetos aplicado é o:[cite: 5]",
+                options: [
+                    "Encapsulamento.[cite: 5]",
+                    "Herança.[cite: 5]",
+                    "Polimorfismo.[cite: 5]",
+                    "Abstração.[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "O encapsulamento oculta a estrutura interna do objeto, liberando acesso aos atributos apenas por métodos de controle pré-definidos[cite: 5]."
+            },
+            {
+                id: 36,
+                title: "QUESTÃO 39",
+                question: "Analise o algoritmo:<br><code class='block bg-slate-800 text-emerald-300 p-2 rounded my-2 text-xs font-mono'>M <- 11, N <- 19, K <- 0<br>Repita<br>&nbsp;&nbsp;K <- K + 2<br>&nbsp;&nbsp;M <- M + 2<br>&nbsp;&nbsp;N <- N - 2<br>Ate K = 6</code><br>Ao final do laço, os valores armazenados em M, N e K são, respectivamente:[cite: 5]",
+                options: [
+                    "17, 13 e 6.[cite: 5]",
+                    "15, 15 e 4.[cite: 5]",
+                    "13, 17 e 2.[cite: 5]",
+                    "19, 11 e 8.[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "Serão executadas 3 iterações até K chegar a 6[cite: 5]. M incrementa 6 unidades (11+6=17) e N decrementa 6 unidades (19-6=13)[cite: 5]."
+            },
+            {
+                id: 37,
+                title: "QUESTÃO 40",
+                question: "Um alarme deve ser disparado se (temperatura > 250 OU pressão > 30) E o sistema de monitoramento estiver ATIVO[cite: 5].<br><br>Qual instrução descreve corretamente essa condição em pseudocódigo?[cite: 5]",
+                options: [
+                    "se (temp > 250 ou pres > 30) e ativo entao[cite: 5]",
+                    "se (temp > 250 e pres > 30) ou ativo entao[cite: 5]",
+                    "se (temp > 250 e pres > 30) e ativo entao[cite: 5]",
+                    "se (temp > 250 ou pres > 30) ou ativo entao[cite: 5]"
+                ],
+                correct: 0,
+                explanation: "O operador disjuntivo OU valida os limites de temperatura ou pressão, enquanto a conjunção E exige o status ativo do sistema de monitoramento[cite: 5]."
+            },
+            {
+                id: 38,
+                title: "QUESTÃO 41",
+                question: "Um vetor armazena leituras de 4 sensores: <code class='text-blue-300'>[45, 20, 28, 50]</code>[cite: 5]. O algoritmo conta +1 na variável <i>valvulasAtivas</i> sempre que a leitura for inferior a 30[cite: 5].<br><br>Ao final da execução do laço, o valor exibido na tela será:[cite: 5]",
+                options: [
+                    "1.[cite: 5]",
+                    "2.[cite: 5]",
+                    "4.[cite: 5]",
+                    "48.[cite: 5]"
+                ],
+                correct: 1,
+                explanation: "Apenas as posições 2 (valor 20) e 3 (valor 28) satisfazem a condição (< 30), incrementando o contador exatamente 2 vezes[cite: 5]."
+            }
+        ];
+
+
+        // --- 2. ESTADO DA APLICAÇÃO ---
+        let studentName = "";
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questionsData.length).fill(null);
+        let timerInterval = null;
+        let totalSeconds = 2 * 60 * 60; // 2 horas
+
+
+        // --- 3. ELEMENTOS DO DOM ---
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const timerContainer = document.getElementById('timer-container');
+        const timerDisplay = document.getElementById('timer-display');
+        
+        const studentNameInput = document.getElementById('student-name-input');
+        const nameErrorMsg = document.getElementById('name-error-msg');
+        const studentNameHeader = document.getElementById('student-name-header');
+        const pdfStudentName = document.getElementById('pdf-student-name');
+        const pdfCompletionDate = document.getElementById('pdf-completion-date');
+
+        const startBtn = document.getElementById('start-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
+        const questionBadge = document.getElementById('question-badge');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const questionsGrid = document.getElementById('questions-grid');
+        const answeredCountBadge = document.getElementById('answered-count-badge');
+
+
+        // --- 4. BLOQUEIO DE BOTÃO DIREITO E INSPEÇÃO DE CÓDIGO ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showToast('Clique com o botão direito desativado.');
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+                (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S'))
+            ) {
+                e.preventDefault();
+                showToast('Atalho de inspeção bloqueado.');
+            }
+        });
+
+
+        // --- 5. CRONÔMETRO REGRESSIVO ---
+        function startTimer() {
+            timerContainer.classList.remove('hidden');
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                totalSeconds--;
+                updateTimerDisplay();
+
+                if (totalSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    showToast('Tempo esgotado! Finalizando o simulado...');
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const format = (num) => String(num).padStart(2, '0');
+            timerDisplay.innerText = `${format(hours)}:${format(minutes)}:${format(seconds)}`;
+
+            if (totalSeconds < 600) {
+                timerDisplay.classList.remove('text-amber-400');
+                timerDisplay.classList.add('text-red-500', 'animate-pulse');
+            }
+        }
+
+
+        // --- 6. RENDERIZAÇÃO DAS QUESTÕES ---
+        function renderQuestion(index) {
+            currentQuestionIndex = index;
+            const q = questionsData[index];
+
+            questionBadge.innerText = `${q.title} (${index + 1} de ${questionsData.length})`;
+            questionText.innerHTML = q.question;
+
+            optionsContainer.innerHTML = '';
+            const labels = ['a', 'b', 'c', 'd', 'e'];
+
+            q.options.forEach((option, optIdx) => {
+                const isSelected = userAnswers[index] === optIdx;
+                
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `flex items-start p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
+                    isSelected 
+                        ? 'bg-blue-900/40 border-blue-500 text-white shadow-md shadow-blue-500/10' 
+                        : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                }`;
+
+                optionDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase mr-3 mt-0.5 transition ${
+                        isSelected ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'
+                    }">${labels[optIdx]}</div>
+                    <div class="text-sm leading-relaxed">${option}</div>
+                `;
+
+                optionDiv.addEventListener('click', () => {
+                    userAnswers[index] = optIdx;
+                    renderQuestion(index);
+                    renderGrid();
+                });
+
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            prevBtn.disabled = index === 0;
+            if (index === questionsData.length - 1) {
+                nextBtn.classList.add('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+            }
+
+            renderGrid();
+        }
+
+
+        // --- 7. GRID DE NAVEGAÇÃO ---
+        function renderGrid() {
+            questionsGrid.innerHTML = '';
+            let answeredCount = 0;
+
+            questionsData.forEach((q, idx) => {
+                const isAnswered = userAnswers[idx] !== null;
+                const isCurrent = currentQuestionIndex === idx;
+
+                if (isAnswered) answeredCount++;
+
+                const btn = document.createElement('button');
+                btn.className = `h-9 rounded-lg font-bold text-xs flex items-center justify-center transition-all ${
+                    isCurrent 
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900' 
+                        : isAnswered 
+                            ? 'bg-emerald-900/50 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-800/60' 
+                            : 'bg-slate-800 border border-slate-700/80 text-slate-400 hover:bg-slate-700'
+                }`;
+
+                btn.innerText = idx + 1;
+                btn.addEventListener('click', () => {
+                    renderQuestion(idx);
+                });
+
+                questionsGrid.appendChild(btn);
+            });
+
+            answeredCountBadge.innerText = `${answeredCount}/${questionsData.length} respondidas`;
+        }
+
+
+        // --- 8. FINALIZAR PROVA ---
+        function finishQuiz() {
+            const unanswered = userAnswers.filter(a => a === null).length;
+            
+            if (unanswered > 0 && totalSeconds > 0) {
+                const confirmFinish = confirm(`Você ainda possui ${unanswered} questão(ões) não respondida(s). Deseja realmente finalizar o simulado?`);
+                if (!confirmFinish) return;
+            }
+
+            clearInterval(timerInterval);
+
+            // Calcular nota
+            let correctCount = 0;
+            userAnswers.forEach((ans, idx) => {
+                if (ans === questionsData[idx].correct) {
+                    correctCount++;
+                }
+            });
+
+            const incorrectCount = questionsData.length - correctCount;
+            const percentage = ((correctCount / questionsData.length) * 100).toFixed(1);
+
+            // Exibir nota e cabeçalho do aluno
+            document.getElementById('score-percentage').innerText = `${percentage}%`;
+            document.getElementById('score-correct').innerText = correctCount;
+            document.getElementById('score-incorrect').innerText = incorrectCount;
+
+            pdfStudentName.innerText = studentName;
+            const now = new Date();
+            pdfCompletionDate.innerText = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+
+            // Renderizar correção das questões
+            renderReview();
+
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // --- 9. REVISÃO COM GABARITO ---
+        function renderReview() {
+            const reviewContainer = document.getElementById('review-container');
+            reviewContainer.innerHTML = '';
+            const labels = ['a', 'b', 'c', 'd', 'e'];
+
+            questionsData.forEach((q, idx) => {
+                const userAns = userAnswers[idx];
+                const isCorrect = userAns === q.correct;
+
+                const card = document.createElement('div');
+                card.className = `border rounded-xl p-5 ${
+                    isCorrect 
+                        ? 'bg-emerald-950/20 border-emerald-800/40' 
+                        : 'bg-red-950/20 border-red-800/40'
+                }`;
+
+                let optionsHTML = '';
+                q.options.forEach((opt, optIdx) => {
+                    let optStyle = 'bg-slate-800/40 border-slate-700/50 text-slate-400';
+                    let badge = '';
+
+                    if (optIdx === q.correct) {
+                        optStyle = 'bg-emerald-900/40 border-emerald-500/60 text-emerald-200 font-semibold';
+                        badge = '<span class="ml-2 text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded">Gabarito Correto</span>';
+                    }
+                    if (userAns === optIdx && !isCorrect) {
+                        optStyle = 'bg-red-900/40 border-red-500/60 text-red-200 font-semibold';
+                        badge = '<span class="ml-2 text-[10px] bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded">Sua Resposta</span>';
+                    } else if (userAns === optIdx && isCorrect) {
+                        badge = '<span class="ml-2 text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded">Sua Resposta (Correta)</span>';
+                    }
+
+                    optionsHTML += `
+                        <div class="flex items-start p-3 rounded-lg border text-xs sm:text-sm ${optStyle}">
+                            <span class="font-bold uppercase mr-2.5">${labels[optIdx]})</span>
+                            <div class="flex-grow">${opt}</div>
+                            ${badge}
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-bold ${isCorrect ? 'text-emerald-400' : 'text-red-400'} uppercase tracking-wider">
+                            <i class="fa-solid ${isCorrect ? 'fa-circle-check' : 'fa-circle-xmark'} mr-1"></i>
+                            ${q.title} - ${isCorrect ? 'Acerto' : 'Incorreta / Sem Resposta'}
+                        </span>
+                        <span class="text-[11px] text-slate-500">Gabarito: (${labels[q.correct]})</span>
+                    </div>
+
+                    <div class="text-sm font-medium text-slate-200 mb-4">${q.question}</div>
+
+                    <div class="space-y-2 mb-4">
+                        ${optionsHTML}
+                    </div>
+
+                    <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-lg text-xs leading-relaxed text-slate-300">
+                        <span class="font-bold text-blue-400 block mb-1"><i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Comentário e Justificativa:</span>
+                        ${q.explanation}
+                    </div>
+                `;
+
+                reviewContainer.appendChild(card);
+            });
+        }
+
+
+        // --- 10. GERAÇÃO DE PDF LOCAL ---
+        function generatePDF() {
+            showToast("Gerando relatório em PDF...");
+            const element = document.getElementById('result-screen');
+            
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     `Simulado_SAEP_${studentName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                showToast("Arquivo PDF baixado com sucesso!");
+            }).catch(err => {
+                console.error("Erro no PDF:", err);
+                showToast("Erro ao gerar o arquivo PDF.");
+            });
+        }
+
+
+        // --- 11. EVENT LISTENERS ---
+        startBtn.addEventListener('click', () => {
+            const nameVal = studentNameInput.value.trim();
+            if (!nameVal) {
+                nameErrorMsg.classList.remove('hidden');
+                studentNameInput.focus();
+                return;
+            }
+
+            nameErrorMsg.classList.add('hidden');
+            studentName = nameVal;
+            studentNameHeader.innerText = studentName;
+
+            welcomeScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            startTimer();
+            renderQuestion(0);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                renderQuestion(currentQuestionIndex - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questionsData.length - 1) {
+                renderQuestion(currentQuestionIndex + 1);
+            }
+        });
+
+        finishBtn.addEventListener('click', finishQuiz);
+
+        restartBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        downloadPdfBtn.addEventListener('click', generatePDF);
+
+    </script>
+</body>
+</html>
